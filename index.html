@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chronosync Reachouts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050915;
+      --panel: rgba(255, 255, 255, 0.04);
+      --panel-strong: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #7ce7ff;
+      --accent-2: #5e7bff;
+      --text: #e8edf7;
+      --muted: #9eb0c9;
+      --warning: #f6d365;
+      --success: #7cf0b6;
+      --danger: #ff9ca0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(124, 231, 255, 0.12), transparent 35%),
+        radial-gradient(circle at 80% 20%, rgba(94, 123, 255, 0.18), transparent 40%),
+        linear-gradient(145deg, #050915, #0a1328 40%, #0b0f1b);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    main {
+      width: min(1200px, 100% - 48px);
+      margin: 0 auto;
+      padding: 32px 0 96px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bg-orb {
+      position: absolute;
+      filter: blur(110px);
+      opacity: 0.6;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .orb-one { width: 360px; height: 360px; background: rgba(94, 123, 255, 0.35); top: -40px; right: -80px; }
+    .orb-two { width: 300px; height: 300px; background: rgba(124, 231, 255, 0.28); bottom: -60px; left: -60px; }
+
+    .top-bar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.35), rgba(94, 123, 255, 0.5));
+      box-shadow: 0 12px 40px rgba(94, 123, 255, 0.35);
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 12px;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: -1.1px;
+      font-family: "Space Grotesk", "Inter", sans-serif;
+    }
+
+    .sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 620px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .chip .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 0 rgba(124, 231, 255, 0.35);
+      transition: box-shadow 0.3s ease, background 0.3s ease;
+    }
+    .chip[data-state="live"] .dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(124, 231, 255, 0.16);
+    }
+    .chip[data-state="fallback"] .dot {
+      background: var(--warning);
+      box-shadow: 0 0 0 6px rgba(246, 211, 101, 0.16);
+    }
+    .chip[data-state="loading"] .dot {
+      background: var(--muted);
+      box-shadow: 0 0 0 6px rgba(158, 176, 201, 0.16);
+    }
+
+    .button {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(124, 231, 255, 0.12), rgba(94, 123, 255, 0.12));
+      color: var(--text);
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.2s ease;
+    }
+    .button:hover { transform: translateY(-2px); border-color: rgba(124, 231, 255, 0.5); }
+    .button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .button.ghost { background: transparent; }
+
+    .summary-grid {
+      margin: 26px 0 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(124, 231, 255, 0.05), rgba(94, 123, 255, 0.05));
+      pointer-events: none;
+    }
+
+    .metric .label {
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .metric .value {
+      margin: 6px 0 6px;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .metric .muted {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      margin: 6px 0 0;
+    }
+    .pill.success { color: var(--success); border-color: rgba(124, 240, 182, 0.4); background: rgba(124, 240, 182, 0.08); }
+    .pill.warning { color: var(--warning); border-color: rgba(246, 211, 101, 0.4); background: rgba(246, 211, 101, 0.08); }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel h2 {
+      margin: 2px 0 0;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      font-family: "Space Grotesk", "Inter", sans-serif;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input[type="search"] {
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-family: "Inter", sans-serif;
+      font-size: 14px;
+      min-width: 200px;
+    }
+
+    input[type="search"]:focus {
+      outline: 1px solid rgba(124, 231, 255, 0.4);
+      box-shadow: 0 0 0 4px rgba(124, 231, 255, 0.08);
+    }
+
+    .chart-area {
+      height: 220px;
+      margin-top: 12px;
+    }
+
+    .table-wrapper {
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: var(--text);
+      min-width: 520px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    th {
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:not(:last-child) td { border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px 0;
+    }
+
+    .muted-sm { color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 720px) {
+      h1 { font-size: 26px; }
+      .brand-mark { width: 46px; height: 46px; }
+      .summary-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+      table { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+  <main>
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-mark">
+          <img src="cs-logo.png" alt="Chronosync logo">
+        </div>
+        <div>
+          <p class="eyebrow">Chronosync</p>
+          <h1>Outbound reachouts</h1>
+          <p class="sub">Live data. Shows total and this week's activity.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="chip" id="syncState" data-state="loading">
+          <span class="dot"></span>
+          <span id="syncLabel">Awaiting data</span>
+        </div>
+        <button class="button ghost" id="refreshBtn">Refresh</button>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <article class="card metric">
+        <p class="label">Total reachouts</p>
+        <p class="value" id="totalReachouts">--</p>
+        <p class="muted" id="peopleMeta">Across -- teammates</p>
+        <p class="muted" id="filterMeta"></p>
+      </article>
+      <article class="card metric">
+        <p class="label">This week</p>
+        <p class="value" id="weekReachouts">--</p>
+        <span class="pill success" id="activeThisWeek">--</span>
+      </article>
+      <article class="card metric">
+        <p class="label">Top contributor (week)</p>
+        <p class="value" id="topContributor">--</p>
+        <p class="muted" id="topContributorDetail">--</p>
+      </article>
+      <article class="card metric">
+        <p class="label">Average per person</p>
+        <p class="value" id="avgPerPerson">--</p>
+        <p class="muted" id="avgWeekPerPerson">--</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="label muted-sm">Team view</p>
+          <h2>Reachouts by person</h2>
+        </div>
+        <div class="controls">
+          <input type="search" id="searchInput" placeholder="Search names">
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="teamChart" height="220"></canvas>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="label muted-sm">Details</p>
+          <h2>Per-person breakdown</h2>
+        </div>
+        <div class="chip" id="dataSourceLabel">Google Sheets</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>This Week</th>
+              <th>Total</th>
+              <th>Share of Total</th>
+            </tr>
+          </thead>
+          <tbody id="peopleBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Keep your sheet settings here; these have been populated with your values.
+    const CONFIG = {
+      sheetId: "1Bao7YKsLpnGxYQV98lCQ5gsfkxfSwPTQFPKv9iMj1AQ",
+      sheetName: "Reachout Tracker",
+      range: "A:I",
+      apiKey: "AIzaSyD1bksReNcdlng7sYjA54KAi89xlpBQJro"
+    };
+
+    // Fallback sample in case the sheet can't be reached.
+    const SAMPLE_MATRIX = [
+      { name: "total", andy: 8, daniel: 3, emily: 5, patrick: 2, jordan: 1, justin: 4, olivia: 2, bodhi: 1, total: 26 },
+      { name: "this week", andy: 1, daniel: 1, emily: 0, patrick: 0, jordan: 0, justin: 1, olivia: 0, bodhi: 0, total: 3 }
+    ];
+
+    const state = { people: [], filtered: [], chart: null, totals: { all: 0, week: 0 } };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setupControls();
+      loadData();
+    });
+
+    function setupControls() {
+      document.getElementById("refreshBtn").addEventListener("click", () => loadData(true));
+      const search = document.getElementById("searchInput");
+      if (search) search.addEventListener("input", debounce(applyFilters, 120));
+    }
+
+    async function loadData(manual = false) {
+      setSyncState("loading", manual ? "Refreshing..." : "Loading from Sheets...");
+      toggleRefresh(true);
+      try {
+        const rows = await fetchSheetData();
+        handleRows(rows, false);
+        setSyncState("live", "Live from Google Sheets");
+      } catch (error) {
+        console.warn("Falling back to sample data:", error);
+        handleRows(SAMPLE_MATRIX, true);
+        setSyncState("fallback", "Sample data (update sheet ID)");
+      } finally {
+        toggleRefresh(false);
+      }
+    }
+
+    async function fetchSheetData() {
+      if (!CONFIG.sheetId || CONFIG.sheetId === "YOUR_SHEET_ID") {
+        throw new Error("Add your sheetId in CONFIG.");
+      }
+      if (CONFIG.apiKey && CONFIG.apiKey !== "YOUR_API_KEY") {
+        return fetchViaApi();
+      }
+      return fetchViaGviz();
+    }
+
+    async function fetchViaApi() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(CONFIG.sheetName + "!" + CONFIG.range)}?key=${CONFIG.apiKey}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Sheets API request failed");
+      const json = await res.json();
+      if (!json.values || !json.values.length) throw new Error("No values returned");
+      const [headers, ...rows] = json.values;
+      return toObjects(rows, headers);
+    }
+
+    async function fetchViaGviz() {
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?sheet=${encodeURIComponent(CONFIG.sheetName)}&range=${encodeURIComponent(CONFIG.range)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Could not reach Google Sheets");
+      const text = await res.text();
+      const json = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
+      const headers = json.table.cols.map((col, i) => col.label || col.id || `col${i + 1}`);
+      const values = json.table.rows.map((row) => row.c.map((cell) => (cell ? cell.v : "")));
+      return toObjects(values, headers);
+    }
+
+    function toObjects(rows, headers) {
+      return rows
+        .map((row) => {
+          const entry = {};
+          headers.forEach((header, idx) => {
+            entry[String(header || `col${idx + 1}`).trim()] = row[idx] ?? "";
+          });
+          return entry;
+        })
+        .filter((row) => Object.values(row).some((val) => val !== "" && val !== null));
+    }
+
+    function normalizeRows(rows) {
+      return rows.map((row) => {
+        const normalized = {};
+        Object.keys(row).forEach((key) => {
+          if (!key) return;
+          normalized[key.toLowerCase()] = row[key];
+        });
+        return normalized;
+      });
+    }
+
+    function handleRows(rows, isFallback) {
+      const parsed = parseMatrixRows(rows);
+      state.people = parsed.people;
+      state.filtered = parsed.people;
+      state.totals = { all: parsed.totalAll, week: parsed.totalWeek };
+      document.getElementById("dataSourceLabel").textContent = isFallback ? "Sample data (edit CONFIG)" : "Live: Google Sheets";
+      applyFilters();
+    }
+
+    function parseMatrixRows(rows) {
+      const normalized = normalizeRows(rows || []);
+      if (!normalized.length) return { people: [], totalAll: 0, totalWeek: 0 };
+
+      const totalRow = normalized.find((r) => includesText(r.name, "total")) || normalized[0];
+      const weekRow = normalized.find((r) => includesText(r.name, "week"));
+      const headerKeys = Object.keys(normalized[0]).filter((key) => key !== "name");
+      const peopleKeys = headerKeys.filter((key) => key !== "total");
+
+      const people = peopleKeys.map((key) => ({
+        key,
+        name: formatName(key),
+        total: toNumber(totalRow ? totalRow[key] : 0),
+        week: toNumber(weekRow ? weekRow[key] : 0)
+      }));
+
+      const totalAll = toNumber(totalRow?.total) || sum(people.map((p) => p.total));
+      const totalWeek = weekRow ? (toNumber(weekRow.total) || sum(people.map((p) => p.week))) : sum(people.map((p) => p.week));
+
+      return { people, totalAll, totalWeek };
+    }
+
+    function applyFilters() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      state.filtered = query ? state.people.filter((p) => p.name.toLowerCase().includes(query)) : state.people;
+      renderSummary();
+      renderChart();
+      renderTable();
+    }
+
+    function renderSummary() {
+      const members = state.people.length;
+      const active = state.people.filter((p) => p.week > 0).length;
+      const top = state.people.reduce((best, p) => (p.week > (best?.week ?? -Infinity) ? p : best), null);
+      const totalAll = state.totals.all;
+      const totalWeek = state.totals.week;
+
+      setText("totalReachouts", formatNumber(totalAll));
+      setText("peopleMeta", members ? `Across ${members} teammates` : "Add teammates in the sheet");
+      setText("filterMeta", state.filtered.length === members ? "Showing all people" : `Filtered: ${state.filtered.length} of ${members}`);
+
+      setText("weekReachouts", formatNumber(totalWeek));
+      const activeLabel = members ? `${active}/${members} active this week` : "No data yet";
+      const activeChip = document.getElementById("activeThisWeek");
+      activeChip.textContent = activeLabel;
+      activeChip.className = "pill " + (active ? "success" : "warning");
+
+      setText("topContributor", top ? top.name : "--");
+      setText("topContributorDetail", top ? `${formatNumber(top.week)} this week | ${formatNumber(top.total)} total` : "No activity yet");
+
+      const avgAll = members ? totalAll / members : 0;
+      const avgWeek = members ? totalWeek / members : 0;
+      setText("avgPerPerson", members ? avgAll.toFixed(1) : "--");
+      setText("avgWeekPerPerson", members ? `${avgWeek.toFixed(1)} per person this week` : "");
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById("teamChart");
+      if (!canvas) return;
+      const data = state.filtered;
+      if (!data.length) {
+        if (state.chart) state.chart.destroy();
+        return;
+      }
+      const labels = data.map((p) => p.name);
+      const totals = data.map((p) => p.total);
+      const weeks = data.map((p) => p.week);
+
+      const context = canvas.getContext("2d");
+      if (state.chart) state.chart.destroy();
+      state.chart = new Chart(context, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Total",
+              data: totals,
+              backgroundColor: "rgba(94, 123, 255, 0.7)",
+              borderRadius: 8
+            },
+            {
+              label: "This Week",
+              data: weeks,
+              backgroundColor: "rgba(124, 231, 255, 0.7)",
+              borderRadius: 8
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#e8edf7" } }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#9eb0c9" },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#9eb0c9" },
+              grid: { color: "rgba(255, 255, 255, 0.08)" }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTable() {
+      const body = document.getElementById("peopleBody");
+      body.innerHTML = "";
+      if (!state.filtered.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.className = "empty";
+        td.textContent = "No people match your filter yet.";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        return;
+      }
+
+      const totalAll = state.totals.all || state.filtered.reduce((sum, p) => sum + p.total, 0);
+
+      state.filtered.forEach((person) => {
+        const tr = document.createElement("tr");
+        appendCell(tr, person.name);
+        appendCell(tr, formatNumber(person.week));
+        appendCell(tr, formatNumber(person.total));
+        const share = totalAll ? Math.round((person.total / totalAll) * 100) : 0;
+        appendCell(tr, totalAll ? `${share}%` : "-");
+        body.appendChild(tr);
+      });
+    }
+
+    function setSyncState(status, label) {
+      const chip = document.getElementById("syncState");
+      chip.dataset.state = status;
+      document.getElementById("syncLabel").textContent = label;
+    }
+
+    function toggleRefresh(isLoading) {
+      const btn = document.getElementById("refreshBtn");
+      btn.textContent = isLoading ? "Refreshing..." : "Refresh";
+      btn.disabled = isLoading;
+    }
+
+    function appendCell(rowEl, value) {
+      const td = document.createElement("td");
+      td.textContent = value ?? "-";
+      rowEl.appendChild(td);
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function includesText(value, target) {
+      return String(value || "").toLowerCase().includes(target);
+    }
+
+    function toNumber(value) {
+      const num = parseFloat(String(value).replace(/[^0-9.-]/g, ""));
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function sum(arr) {
+      return arr.reduce((acc, n) => acc + (Number.isFinite(n) ? n : 0), 0);
+    }
+
+    function formatNumber(value) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toLocaleString() : "-";
+    }
+
+    function formatName(key) {
+      return String(key || "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim();
+    }
+
+    function debounce(fn, delay = 150) {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), delay);
+      };
+    }
+  </script>
+</body>
+</html>
