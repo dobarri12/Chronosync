@@ -382,8 +382,7 @@
 
       <article class="card metric">
         <p class="label">Conversion rate (vs outreach)</p>
-        <p class="value" id="conversionRateWeek">--</p>
-        <p class="muted" id="conversionRateTotal">-- overall</p>
+        <p class="value" id="conversionRateTotal">-- overall</p>
       </article>
 
     </section>
@@ -820,17 +819,12 @@
       const outreachWeek = state?.totals?.week || 0;
       const outreachAll  = state?.totals?.all  || 0;
 
-      const schedConvAll  = outreachAll  > 0 ? Math.round((t.scheduledAll / outreachAll) * 100).toFixed(2) : null;
-      const compConvAll   = outreachAll  > 0 ? Math.round((t.completedAll / outreachAll) * 100).toFixed(2) : null;
+      const totalConvAll = outreachAll > 0
+        ? (((t.scheduledAll + t.completedAll) / outreachAll) * 100).toFixed(2)
+        : null;
 
 
-      setText(
-        "conversionRateTotal",
-        (schedConvAll === null && compConvAll === null)
-          ? "-- overall"
-          : `Overall: Scheduled ${schedConvAll ?? 0}% | Completed ${compConvAll ?? 0}%`
-      );
-
+      setText("conversionRateTotal", totalConvAll  ? `${totalConvAll}% overall` : "-- overall");
     }
 
     function renderCallsChart() {
