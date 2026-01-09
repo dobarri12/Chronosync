@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chronosync Reachouts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050915;
+      --panel: rgba(255, 255, 255, 0.04);
+      --panel-strong: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #7ce7ff;
+      --accent-2: #5e7bff;
+      --text: #e8edf7;
+      --muted: #9eb0c9;
+      --warning: #f6d365;
+      --success: #7cf0b6;
+      --danger: #ff9ca0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(124, 231, 255, 0.12), transparent 35%),
+        radial-gradient(circle at 80% 20%, rgba(94, 123, 255, 0.18), transparent 40%),
+        linear-gradient(145deg, #050915, #0a1328 40%, #0b0f1b);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    main {
+      width: min(1200px, 100% - 48px);
+      margin: 0 auto;
+      padding: 32px 0 96px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bg-orb {
+      position: absolute;
+      filter: blur(110px);
+      opacity: 0.6;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .orb-one { width: 360px; height: 360px; background: rgba(94, 123, 255, 0.35); top: -40px; right: -80px; }
+    .orb-two { width: 300px; height: 300px; background: rgba(124, 231, 255, 0.28); bottom: -60px; left: -60px; }
+
+    .top-bar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.35), rgba(94, 123, 255, 0.5));
+      box-shadow: 0 12px 40px rgba(94, 123, 255, 0.35);
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 12px;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: -1.1px;
+      font-family: "Space Grotesk", "Inter", sans-serif;
+    }
+
+    .sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 620px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .chip .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 0 rgba(124, 231, 255, 0.35);
+      transition: box-shadow 0.3s ease, background 0.3s ease;
+    }
+    .chip[data-state="live"] .dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(124, 231, 255, 0.16);
+    }
+    .chip[data-state="fallback"] .dot {
+      background: var(--warning);
+      box-shadow: 0 0 0 6px rgba(246, 211, 101, 0.16);
+    }
+    .chip[data-state="loading"] .dot {
+      background: var(--muted);
+      box-shadow: 0 0 0 6px rgba(158, 176, 201, 0.16);
+    }
+
+    .button {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(124, 231, 255, 0.12), rgba(94, 123, 255, 0.12));
+      color: var(--text);
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.2s ease;
+    }
+    .button:hover { transform: translateY(-2px); border-color: rgba(124, 231, 255, 0.5); }
+    .button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .button.ghost { background: transparent; }
+
+    .summary-grid {
+      margin: 26px 0 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(124, 231, 255, 0.05), rgba(94, 123, 255, 0.05));
+      pointer-events: none;
+    }
+
+    .metric .label {
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .metric .value {
+      margin: 6px 0 6px;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .metric .muted {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      margin: 6px 0 0;
+    }
+    .pill.success { color: var(--success); border-color: rgba(124, 240, 182, 0.4); background: rgba(124, 240, 182, 0.08); }
+    .pill.warning { color: var(--warning); border-color: rgba(246, 211, 101, 0.4); background: rgba(246, 211, 101, 0.08); }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel h2 {
+      margin: 2px 0 0;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      font-family: "Space Grotesk", "Inter", sans-serif;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input[type="search"] {
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-family: "Inter", sans-serif;
+      font-size: 14px;
+      min-width: 200px;
+    }
+
+    input[type="search"]:focus {
+      outline: 1px solid rgba(124, 231, 255, 0.4);
+      box-shadow: 0 0 0 4px rgba(124, 231, 255, 0.08);
+    }
+
+    .chart-area {
+      height: 220px;
+      margin-top: 12px;
+    }
+
+    .table-wrapper {
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: var(--text);
+      min-width: 520px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    th {
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:not(:last-child) td { border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px 0;
+    }
+
+    .muted-sm { color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 720px) {
+      h1 { font-size: 26px; }
+      .brand-mark { width: 46px; height: 46px; }
+      .summary-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+      table { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+  <main>
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-mark">
+          <img src="cs-logo.png" alt="Chronosync logo">
+        </div>
+        <div>
+          <p class="eyebrow">Chronosync</p>
+          <h1>Outbound reachouts</h1>
+          <p class="sub">Live data. Shows total and this week's activity.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="chip" id="syncState" data-state="loading">
+          <span class="dot"></span>
+          <span id="syncLabel">Awaiting data</span>
+        </div>
+        <button class="button ghost" id="refreshBtn">Refresh</button>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <article class="card metric">
+        <p class="label">Total reachouts</p>
+        <p class="value" id="totalReachouts">--</p>
+        <p class="muted" id="peopleMeta">Across -- teammates</p>
+        <p class="muted" id="filterMeta"></p>
+      </article>
+      <article class="card metric">
+        <p class="label">This week</p>
+        <p class="value" id="weekReachouts">--</p>
+        <span class="pill success" id="activeThisWeek">--</span>
+      </article>
+      <article class="card metric">
+        <p class="label">Top contributor (week)</p>
+        <p class="value" id="topContributor">--</p>
+        <p class="muted" id="topContributorDetail">--</p>
+      </article>
+      <article class="card metric">
+        <p class="label">Average per person</p>
+        <p class="value" id="avgPerPerson">--</p>
+        <p class="muted" id="avgWeekPerPerson">--</p>
+      </article>
+    </section>
+
+    <section class="summary-grid">
+      <article class="card metric">
+        <p class="label">Calls scheduled (week)</p>
+        <p class="value" id="scheduledWeekCalls">--</p>
+        <p class="muted" id="scheduledTotalCalls">-- total scheduled</p>
+      </article>
+
+      <article class="card metric">
+        <p class="label">Calls completed (week)</p>
+        <p class="value" id="completedWeekCalls">--</p>
+        <p class="muted" id="completedTotalCalls">-- total completed</p>
+      </article>
+
+      <article class="card metric">
+        <p class="label">Conversion rate (vs outreach)</p>
+        <p class="value" id="conversionRateTotal">-- overall</p>
+      </article>
+
+    </section>
+
+    <section class="summary-grid">
+      <article class="card metric">
+        <p class="label">Follow-ups (week)</p>
+        <p class="value" id="followedWeek">--</p>
+      </article>
+
+      <article class="card metric">
+        <p class="label">Follow-ups (total)</p>
+        <p class="value" id="followedTotal">--</p>
+      </article>
+    </section>
+
+
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="label muted-sm">Team view</p>
+          <h2>Reachouts by person</h2>
+        </div>
+        <div class="controls">
+          <input type="search" id="searchInput" placeholder="Search names">
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="teamChart" height="220"></canvas>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="label muted-sm">Details</p>
+          <h2>Per-person breakdown</h2>
+        </div>
+        <div class="chip" id="dataSourceLabel">Google Sheets</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>This Week</th>
+              <th>Total</th>
+              <th>Share of Total</th>
+            </tr>
+          </thead>
+          <tbody id="peopleBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="label muted-sm">Team view</p>
+      <h2>Calls (scheduled vs completed)</h2>
+    </div>
+    <div class="controls">
+      <input type="search" id="callsSearchInput" placeholder="Search names">
+    </div>
+  </div>
+  <div class="chart-area">
+    <canvas id="callsChart" height="220"></canvas>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="label muted-sm">Details</p>
+      <h2>Calls breakdown</h2>
+    </div>
+    <div class="chip" id="callsDataSourceLabel">Google Sheets</div>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Scheduled (Week)</th>
+          <th>Completed (Week)</th>
+          <th>Scheduled (Total)</th>
+          <th>Completed (Total)</th>
+          <th>Completion (Week)</th>
+        </tr>
+      </thead>
+      <tbody id="callsBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="label muted-sm">Team view</p>
+      <h2>Follow-ups by person</h2>
+    </div>
+    <div class="controls">
+      <input type="search" id="followedSearchInput" placeholder="Search names">
+    </div>
+  </div>
+  <div class="chart-area">
+    <canvas id="followedChart" height="220"></canvas>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="label muted-sm">Details</p>
+      <h2>Follow-ups breakdown</h2>
+    </div>
+    <div class="chip" id="followedDataSourceLabel">Google Sheets</div>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>This Week</th>
+          <th>Total</th>
+          <th>Share of Total</th>
+        </tr>
+      </thead>
+      <tbody id="followedBody"></tbody>
+    </table>
+  </div>
+</section>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // One spreadsheet, two tabs.
+    const CONFIG = {
+      sheetId: "1Bao7YKsLpnGxYQV98lCQ5gsfkxfSwPTQFPKv9iMj1AQ",
+      apiKey: "AIzaSyD1bksReNcdlng7sYjA54KAi89xlpBQJro",
+      reachouts: { sheetName: "Reachout Tracker", range: "A:I" },
+      calls: { sheetName: "Scheduled Tracker", range: "A:K" }, // screenshot shows Total in col K (with a blank col J)
+      followed: {sheetName: "Followed Up Tracker", range: "A:I" }
+    };
+
+    // Fallback samples in case the sheet can't be reached.
+    const SAMPLE_MATRIX = [
+      { name: "total", andy: 8, daniel: 3, emily: 5, patrick: 2, jordan: 1, justin: 4, olivia: 2, bodhi: 1, total: 26 },
+      { name: "this week", andy: 1, daniel: 1, emily: 0, patrick: 0, jordan: 0, justin: 1, olivia: 0, bodhi: 0, total: 3 }
+    ];
+
+    const SAMPLE_FOLLOWED_MATRIX = [
+      { name: "total", andy: 4, daniel: 2, emily: 3, patrick: 1, jordan: 1, justin: 2, olivia: 1, bodhi: 0, total: 14 },
+      { name: "this week", andy: 1, daniel: 0, emily: 1, patrick: 0, jordan: 0, justin: 0, olivia: 1, bodhi: 0, total: 3 }
+    ];
+
+    const SAMPLE_CALLS_MATRIX = [
+      { name: "Scheduled", andy: 2, daniel: 2, emily: 0, patrick: 0, jordan: 0, justin: 0, olivia: 4, bodhi: 0, total: 8 },
+      { name: "This Week", andy: 0, daniel: 0, emily: 0, patrick: 0, jordan: 0, justin: 0, olivia: 0, bodhi: 0, total: 0 },
+      { name: "Completed", andy: 1, daniel: 3, emily: 2, patrick: 0, jordan: 1, justin: 2, olivia: 0, bodhi: 0, total: 9 },
+      { name: "This Week", andy: 0, daniel: 0, emily: 0, patrick: 0, jordan: 0, justin: 0, olivia: 0, bodhi: 0, total: 0 },
+      { name: "TOTAL", andy: 3, daniel: 5, emily: 2, patrick: 0, jordan: 1, justin: 2, olivia: 4, bodhi: 0, total: 17 },
+      { name: "TOTAL THIS WEEK", andy: 0, daniel: 0, emily: 0, patrick: 0, jordan: 0, justin: 0, olivia: 0, bodhi: 0, total: 0 }
+    ];
+
+    // Reachouts state (existing).
+    const state = { people: [], filtered: [], chart: null, totals: { all: 0, week: 0 } };
+
+    // Calls state (new).
+    const callsState = {
+      people: [],
+      filtered: [],
+      chart: null,
+      totals: { scheduledAll: 0, scheduledWeek: 0, completedAll: 0, completedWeek: 0 }
+    };
+
+    const followedState = { people: [], filtered: [], chart: null, totals: { all: 0, week: 0 } };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setupControls();
+      loadData();
+    });
+
+    function setupControls() {
+      document.getElementById("refreshBtn").addEventListener("click", () => loadData(true));
+
+      const search = document.getElementById("searchInput");
+      if (search) search.addEventListener("input", debounce(applyFilters, 120));
+
+      const callsSearch = document.getElementById("callsSearchInput");
+      if (callsSearch) callsSearch.addEventListener("input", debounce(applyCallFilters, 120));
+
+      const followedSearch = document.getElementById("followedSearchInput");
+      if (followedSearch) followedSearch.addEventListener("input", debounce(applyFollowFilters, 120));
+    }
+
+    async function loadData(manual = false) {
+      setSyncState("loading", manual ? "Refreshing..." : "Loading from Sheets...");
+      toggleRefresh(true);
+
+      let reachoutsFallback = false;
+      let callsFallback = false;
+      let followedFallback = false;
+
+      try {
+        const reachoutRows = await fetchSheetData(CONFIG.reachouts.sheetName, CONFIG.reachouts.range);
+        handleRows(reachoutRows, false);
+      } catch (e) {
+        console.warn("Reachouts: falling back to sample:", e);
+        handleRows(SAMPLE_MATRIX, true);
+        reachoutsFallback = true;
+      }
+
+      try {
+        const callsRows = await fetchSheetData(CONFIG.calls.sheetName, CONFIG.calls.range);
+        handleCallRows(callsRows, false);
+      } catch (e) {
+        console.warn("Calls: falling back to sample:", e);
+        handleCallRows(SAMPLE_CALLS_MATRIX, true);
+        callsFallback = true;
+      }
+
+      try {
+        const followedRows = await fetchSheetData(CONFIG.followed.sheetName, CONFIG.followed.range);
+        handleFollowRows(followedRows, false);
+      } catch (e) {
+        console.warn("Follow-ups: falling back to sample:", e);
+        handleFollowRows(SAMPLE_FOLLOWED_MATRIX, true);
+        followedFallback = true;
+      }
+
+
+      if (!reachoutsFallback && !callsFallback && !followedFallback) {
+        setSyncState("live", "Live from Google Sheets");
+      } else if (reachoutsFallback && callsFallback && followedFallback) {
+        setSyncState("fallback", "Sample data (check sheet access)");
+      } else {
+        setSyncState("fallback", `Partial fallback (${reachoutsFallback ? "reachouts" : "calls"})`);
+      }
+
+      toggleRefresh(false);
+    }
+
+    async function fetchSheetData(sheetName, range) {
+      if (!CONFIG.sheetId || CONFIG.sheetId === "YOUR_SHEET_ID") {
+        throw new Error("Add your sheetId in CONFIG.");
+      }
+      if (CONFIG.apiKey && CONFIG.apiKey !== "YOUR_API_KEY") {
+        return fetchViaApi(sheetName, range);
+      }
+      return fetchViaGviz(sheetName, range);
+    }
+
+    async function fetchViaApi(sheetName, range) {
+      const a1 = `${sheetName}!${range}`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(a1)}?key=${CONFIG.apiKey}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Sheets API request failed");
+      const json = await res.json();
+      if (!json.values || !json.values.length) throw new Error("No values returned");
+      const [headers, ...rows] = json.values;
+      return toObjects(rows, headers);
+    }
+
+    async function fetchViaGviz(sheetName, range) {
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Could not reach Google Sheets");
+      const text = await res.text();
+      const json = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
+      const headers = json.table.cols.map((col, i) => col.label || col.id || `col${i + 1}`);
+      const values = json.table.rows.map((row) => row.c.map((cell) => (cell ? cell.v : "")));
+      return toObjects(values, headers);
+    }
+
+    function toObjects(rows, headers) {
+      return rows
+        .map((row) => {
+          const entry = {};
+          headers.forEach((header, idx) => {
+            entry[String(header || `col${idx + 1}`).trim()] = row[idx] ?? "";
+          });
+          return entry;
+        })
+        .filter((row) => Object.values(row).some((val) => val !== "" && val !== null));
+    }
+
+    function normalizeRows(rows) {
+      return rows.map((row) => {
+        const normalized = {};
+        Object.keys(row).forEach((key) => {
+          if (!key) return;
+          normalized[key.toLowerCase()] = row[key];
+        });
+        return normalized;
+      });
+    }
+
+    // --------- REACHOUTS (existing behavior) ---------
+    function handleRows(rows, isFallback) {
+      const parsed = parseMatrixRows(rows);
+      state.people = parsed.people;
+      state.filtered = parsed.people;
+      state.totals = { all: parsed.totalAll, week: parsed.totalWeek };
+      document.getElementById("dataSourceLabel").textContent = isFallback ? "Sample data (edit CONFIG)" : "Live: Google Sheets";
+      applyFilters();
+    }
+
+    function parseMatrixRows(rows) {
+      const normalized = normalizeRows(rows || []);
+      if (!normalized.length) return { people: [], totalAll: 0, totalWeek: 0 };
+
+      // Prefer a “total” row that is NOT “total this week”
+      const totalRow =
+        normalized.find((r) => includesText(r.name, "total") && !includesText(r.name, "this week")) || normalized[0];
+
+      // Prefer “this week” row (not total)
+      const weekRow =
+        normalized.find((r) => includesText(r.name, "this week")) ||
+        normalized.find((r) => includesText(r.name, "week") && !includesText(r.name, "total"));
+
+      const headerKeys = Object.keys(normalized[0]).filter((key) => key !== "name");
+      const peopleKeys = headerKeys.filter((key) => key !== "total" && !/^col\d+$/i.test(key));
+
+      const people = peopleKeys.map((key) => ({
+        key,
+        name: formatName(key),
+        total: toNumber(totalRow ? totalRow[key] : 0),
+        week: toNumber(weekRow ? weekRow[key] : 0)
+      }));
+
+      const totalAll = toNumber(totalRow?.total) || sum(people.map((p) => p.total));
+      const totalWeek = weekRow ? (toNumber(weekRow.total) || sum(people.map((p) => p.week))) : sum(people.map((p) => p.week));
+
+      return { people, totalAll, totalWeek };
+    }
+
+    function applyFilters() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      state.filtered = query ? state.people.filter((p) => p.name.toLowerCase().includes(query)) : state.people;
+      renderSummary();
+      renderChart();
+      renderTable();
+    }
+
+    function renderSummary() {
+      const members = state.people.length;
+      const active = state.people.filter((p) => p.week > 0).length;
+      const top = state.people.reduce((best, p) => (p.week > (best?.week ?? -Infinity) ? p : best), null);
+      const totalAll = state.totals.all;
+      const totalWeek = state.totals.week;
+
+      setText("totalReachouts", formatNumber(totalAll));
+      setText("peopleMeta", members ? `Across ${members} teammates` : "Add teammates in the sheet");
+      setText("filterMeta", state.filtered.length === members ? "Showing all people" : `Filtered: ${state.filtered.length} of ${members}`);
+
+      setText("weekReachouts", formatNumber(totalWeek));
+      const activeLabel = members ? `${active}/${members} active this week` : "No data yet";
+      const activeChip = document.getElementById("activeThisWeek");
+      activeChip.textContent = activeLabel;
+      activeChip.className = "pill " + (active ? "success" : "warning");
+
+      setText("topContributor", top ? top.name : "--");
+      setText("topContributorDetail", top ? `${formatNumber(top.week)} this week | ${formatNumber(top.total)} total` : "No activity yet");
+
+      const avgAll = members ? totalAll / members : 0;
+      const avgWeek = members ? totalWeek / members : 0;
+      setText("avgPerPerson", members ? avgAll.toFixed(1) : "--");
+      setText("avgWeekPerPerson", members ? `${avgWeek.toFixed(1)} per person this week` : "");
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById("teamChart");
+      if (!canvas) return;
+
+      const data = state.filtered;
+      if (!data.length) {
+        if (state.chart) state.chart.destroy();
+        return;
+      }
+
+      const labels = data.map((p) => p.name);
+      const totals = data.map((p) => p.total);
+      const weeks = data.map((p) => p.week);
+
+      const context = canvas.getContext("2d");
+      if (state.chart) state.chart.destroy();
+
+      state.chart = new Chart(context, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "Total", data: totals, backgroundColor: "rgba(94, 123, 255, 0.7)", borderRadius: 8 },
+            { label: "This Week", data: weeks, backgroundColor: "rgba(124, 231, 255, 0.7)", borderRadius: 8 }
+          ]
+        },
+        options: chartOptions()
+      });
+    }
+
+    function renderTable() {
+      const body = document.getElementById("peopleBody");
+      body.innerHTML = "";
+
+      if (!state.filtered.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.className = "empty";
+        td.textContent = "No people match your filter yet.";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        return;
+      }
+
+      const totalAll = state.totals.all || state.filtered.reduce((sum, p) => sum + p.total, 0);
+
+      state.filtered.forEach((person) => {
+        const tr = document.createElement("tr");
+        appendCell(tr, person.name);
+        appendCell(tr, formatNumber(person.week));
+        appendCell(tr, formatNumber(person.total));
+        const share = totalAll ? Math.round((person.total / totalAll) * 100) : 0;
+        appendCell(tr, totalAll ? `${share}%` : "-");
+        body.appendChild(tr);
+      });
+    }
+
+    // --------- CALLS (new) ---------
+    function handleCallRows(rows, isFallback) {
+      const parsed = parseScheduledTrackerRows(rows);
+      callsState.people = parsed.people;
+      callsState.filtered = parsed.people;
+      callsState.totals = parsed.totals;
+
+      const label = document.getElementById("callsDataSourceLabel");
+      if (label) label.textContent = isFallback ? "Sample data (edit CONFIG)" : "Live: Google Sheets";
+
+      applyCallFilters();
+    }
+
+    function parseScheduledTrackerRows(rows) {
+      const normalized = normalizeRows(rows || []);
+      if (!normalized.length) {
+        return { people: [], totals: { scheduledAll: 0, scheduledWeek: 0, completedAll: 0, completedWeek: 0 } };
+      }
+
+      const idxScheduled = normalized.findIndex((r) => includesText(r.name, "scheduled"));
+      const idxCompleted = normalized.findIndex((r) => includesText(r.name, "completed"));
+
+      const scheduledRow = idxScheduled >= 0 ? normalized[idxScheduled] : null;
+      const scheduledWeekRow =
+        idxScheduled >= 0 && normalized[idxScheduled + 1] && includesText(normalized[idxScheduled + 1].name, "week")
+          ? normalized[idxScheduled + 1]
+          : normalized.find((r, i) => i > idxScheduled && includesText(r.name, "week"));
+
+      const completedRow = idxCompleted >= 0 ? normalized[idxCompleted] : null;
+      const completedWeekRow =
+        idxCompleted >= 0 && normalized[idxCompleted + 1] && includesText(normalized[idxCompleted + 1].name, "week")
+          ? normalized[idxCompleted + 1]
+          : normalized.find((r, i) => i > idxCompleted && includesText(r.name, "week"));
+
+      const headerKeys = Object.keys(normalized[0]).filter((key) => key !== "name");
+      const peopleKeys = headerKeys.filter((key) => key !== "total" && !/^col\d+$/i.test(key));
+
+      const people = peopleKeys.map((key) => ({
+        key,
+        name: formatName(key),
+        scheduledTotal: toNumber(scheduledRow ? scheduledRow[key] : 0),
+        scheduledWeek: toNumber(scheduledWeekRow ? scheduledWeekRow[key] : 0),
+        completedTotal: toNumber(completedRow ? completedRow[key] : 0),
+        completedWeek: toNumber(completedWeekRow ? completedWeekRow[key] : 0)
+      }));
+
+      const totals = {
+        scheduledAll: toNumber(scheduledRow?.total) || sum(people.map((p) => p.scheduledTotal)),
+        scheduledWeek: toNumber(scheduledWeekRow?.total) || sum(people.map((p) => p.scheduledWeek)),
+        completedAll: toNumber(completedRow?.total) || sum(people.map((p) => p.completedTotal)),
+        completedWeek: toNumber(completedWeekRow?.total) || sum(people.map((p) => p.completedWeek))
+      };
+
+      return { people, totals };
+    }
+
+    function applyCallFilters() {
+      const input = document.getElementById("callsSearchInput");
+      const query = input ? input.value.trim().toLowerCase() : "";
+      callsState.filtered = query ? callsState.people.filter((p) => p.name.toLowerCase().includes(query)) : callsState.people;
+
+      renderCallsSummary();
+      renderCallsChart();
+      renderCallsTable();
+    }
+
+    function renderCallsSummary() {
+      const t = callsState.totals || { scheduledAll: 0, scheduledWeek: 0, completedAll: 0, completedWeek: 0 };
+
+      setText("scheduledWeekCalls", formatNumber(t.scheduledWeek));
+      setText("scheduledTotalCalls", `${formatNumber(t.scheduledAll)} total scheduled`);
+
+      setText("completedWeekCalls", formatNumber(t.completedWeek));
+      setText("completedTotalCalls", `${formatNumber(t.completedAll)} total completed`);
+
+      const outreachWeek = state?.totals?.week || 0;
+      const outreachAll  = state?.totals?.all  || 0;
+
+      const totalConvAll = outreachAll > 0
+        ? (((t.scheduledAll + t.completedAll) / outreachAll) * 100).toFixed(2)
+        : null;
+
+
+      setText("conversionRateTotal", totalConvAll  ? `${totalConvAll}% overall` : "-- overall");
+    }
+
+    function renderCallsChart() {
+      const canvas = document.getElementById("callsChart");
+      if (!canvas) return;
+
+      const data = callsState.filtered;
+      if (!data.length) {
+        if (callsState.chart) callsState.chart.destroy();
+        return;
+      }
+
+      const labels = data.map((p) => p.name);
+      const scheduled = data.map((p) => p.scheduledWeek);
+      const completed = data.map((p) => p.completedWeek);
+
+      const ctx = canvas.getContext("2d");
+      if (callsState.chart) callsState.chart.destroy();
+
+      callsState.chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "Scheduled (Week)", data: scheduled, backgroundColor: "rgba(94, 123, 255, 0.7)", borderRadius: 8 },
+            { label: "Completed (Week)", data: completed, backgroundColor: "rgba(124, 240, 182, 0.7)", borderRadius: 8 }
+          ]
+        },
+        options: chartOptions()
+      });
+    }
+
+    function renderCallsTable() {
+      const body = document.getElementById("callsBody");
+      if (!body) return;
+
+      body.innerHTML = "";
+
+      if (!callsState.filtered.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 6;
+        td.className = "empty";
+        td.textContent = "No people match your filter yet.";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        return;
+      }
+
+      callsState.filtered.forEach((p) => {
+        const tr = document.createElement("tr");
+        appendCell(tr, p.name);
+        appendCell(tr, formatNumber(p.scheduledWeek));
+        appendCell(tr, formatNumber(p.completedWeek));
+        appendCell(tr, formatNumber(p.scheduledTotal));
+        appendCell(tr, formatNumber(p.completedTotal));
+        const rate = p.scheduledWeek > 0 ? `${Math.round((p.completedWeek / p.scheduledWeek) * 100)}%` : "-";
+        appendCell(tr, rate);
+        body.appendChild(tr);
+      });
+    }
+
+
+    function handleFollowRows(rows, isFallback) {
+      const parsed = parseMatrixRows(rows);
+      followedState.people = parsed.people;
+      followedState.filtered = parsed.people;
+      followedState.totals = { all: parsed.totalAll, week: parsed.totalWeek };
+
+      const label = document.getElementById("followedDataSourceLabel");
+      if (label) label.textContent = isFallback ? "Sample data (edit CONFIG)" : "Live: Google Sheets";
+
+      applyFollowFilters();
+    }
+
+    function applyFollowFilters() {
+      const input = document.getElementById("followedSearchInput");
+      const query = input ? input.value.trim().toLowerCase() : "";
+
+      followedState.filtered = query
+        ? followedState.people.filter((p) => p.name.toLowerCase().includes(query))
+        : followedState.people;
+
+      renderFollowSummary();
+      renderFollowChart();
+      renderFollowTable();
+    }
+
+    function renderFollowSummary() {
+      setText("followedWeek", formatNumber(followedState.totals.week));
+      setText("followedTotal", formatNumber(followedState.totals.all));
+    }
+
+    function renderFollowChart() {
+      const canvas = document.getElementById("followedChart");
+      if (!canvas) return;
+
+      const data = followedState.filtered;
+      if (!data.length) {
+        if (followedState.chart) followedState.chart.destroy();
+        return;
+      }
+
+      const labels = data.map((p) => p.name);
+      const totals = data.map((p) => p.total);
+      const weeks = data.map((p) => p.week);
+
+      const ctx = canvas.getContext("2d");
+      if (followedState.chart) followedState.chart.destroy();
+
+      followedState.chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "Total", data: totals, backgroundColor: "rgba(94, 123, 255, 0.7)", borderRadius: 8 },
+            { label: "This Week", data: weeks, backgroundColor: "rgba(124, 231, 255, 0.7)", borderRadius: 8 }
+          ]
+        },
+        options: chartOptions()
+      });
+    }
+
+    function renderFollowTable() {
+      const body = document.getElementById("followedBody");
+      if (!body) return;
+
+      body.innerHTML = "";
+
+      if (!followedState.filtered.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.className = "empty";
+        td.textContent = "No people match your filter yet.";
+        tr.appendChild(td);
+        body.appendChild(tr);
+        return;
+      }
+
+      const totalAll = followedState.totals.all || followedState.filtered.reduce((sum, p) => sum + p.total, 0);
+
+      followedState.filtered.forEach((person) => {
+        const tr = document.createElement("tr");
+        appendCell(tr, person.name);
+        appendCell(tr, formatNumber(person.week));
+        appendCell(tr, formatNumber(person.total));
+        const share = totalAll ? Math.round((person.total / totalAll) * 100) : 0;
+        appendCell(tr, totalAll ? `${share}%` : "-");
+        body.appendChild(tr);
+      });
+    }
+
+
+    // --------- Shared UI helpers ---------
+    function chartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#e8edf7" } } },
+        scales: {
+          x: { ticks: { color: "#9eb0c9" }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: "#9eb0c9" }, grid: { color: "rgba(255, 255, 255, 0.08)" } }
+        }
+      };
+    }
+
+    function setSyncState(status, label) {
+      const chip = document.getElementById("syncState");
+      chip.dataset.state = status;
+      document.getElementById("syncLabel").textContent = label;
+    }
+
+    function toggleRefresh(isLoading) {
+      const btn = document.getElementById("refreshBtn");
+      btn.textContent = isLoading ? "Refreshing..." : "Refresh";
+      btn.disabled = isLoading;
+    }
+
+    function appendCell(rowEl, value) {
+      const td = document.createElement("td");
+      td.textContent = value ?? "-";
+      rowEl.appendChild(td);
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function includesText(value, target) {
+      return String(value || "").toLowerCase().includes(target);
+    }
+
+    function toNumber(value) {
+      const num = parseFloat(String(value).replace(/[^0-9.-]/g, ""));
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function sum(arr) {
+      return arr.reduce((acc, n) => acc + (Number.isFinite(n) ? n : 0), 0);
+    }
+
+    function formatNumber(value) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toLocaleString() : "-";
+    }
+
+    function formatName(key) {
+      return String(key || "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim();
+    }
+
+    function debounce(fn, delay = 150) {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), delay);
+      };
+    }
+  </script>
+</body>
+</html>
